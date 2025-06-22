@@ -9,7 +9,8 @@ import {
   Avatar,
   Stack,
   Snackbar,
-  Alert
+  Alert,
+  Link
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { login } from '../service/api';
@@ -119,7 +120,11 @@ const Login = () => {
             sx={{ mt: 3 }}
           >
             Login
-          </Button>
+          </Button >
+          <Box   sx={{mt:1 ,display:'flex'}}>
+            <Typography variant="h7">Don't have account </Typography>
+            <Typography variant="h7" color='primary' onClick={() => navigate('/signup')}  sx={{ml:1}}> <Link > Sign Up</Link> </Typography>
+          </Box>
         </Box>
       </Paper>
 

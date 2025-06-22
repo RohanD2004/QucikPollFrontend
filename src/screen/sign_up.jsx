@@ -7,18 +7,25 @@ import {
   Paper,
   Box,
   Avatar,
-  Stack
+  Stack,
+  CircularProgress,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { signup } from '../service/api';
+import { useNavigate } from 'react-router-dom';
 
 const Sign_up = () => {
+  const navigate = useNavigate();
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [errors, setErrors] = useState({ name: '', email: '', password: '' });
+  const [loading, setLoading] = useState(false); // <-- loading state
+   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-    setErrors({ ...errors, [e.target.name]: '' }); // Clear error on change
+    setErrors({ ...errors, [e.target.name]: '' });
   };
 
   const validate = () => {
@@ -48,14 +55,23 @@ const Sign_up = () => {
   const handleSignup = async (e) => {
     e.preventDefault();
     if (validate()) {
+      setLoading(true); // Start loading
       try {
-        const res= await signup(form);
-      } catch (error) {
-        console.log(error);
-      }
+        const res = await signup(form);
+        setSnackbar({ open: true, message: 'Sign Up successful!', severity: 'success' });
+        navigate('/login');
 
-      
+      } catch (error) {
+        console.error(error);
+        setSnackbar({ open: true, message: error, severity: 'error' });
+      } finally {
+        setLoading(false);
+      }
     }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
   };
 
   return (
@@ -68,7 +84,7 @@ const Sign_up = () => {
           <Typography variant="h5">Sign Up</Typography>
         </Stack>
 
-        <Box component="form" onSubmit={handleSignup} sx={{ mt: 3 }}>
+        <Box component="form" sx={{ mt: 3 }}>
           <TextField
             fullWidth
             label="Full Name"
@@ -104,16 +120,29 @@ const Sign_up = () => {
             error={!!errors.password}
             helperText={errors.password}
           />
+
           <Button
             type="submit"
             fullWidth
             variant="contained"
+            onClick={handleSignup}
             sx={{ mt: 3 }}
+            disabled={loading}
           >
-            Sign Up
+            {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign Up'}
           </Button>
         </Box>
       </Paper>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };
