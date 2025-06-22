@@ -101,7 +101,7 @@ const Dashboard = () => {
   async function getAllPolls() {
     try {
 
-      const res = await getpolls(localStorage.getItem('user_id'));
+      const res = await getpolls(localStorage.getItem('quick_poll_user_id'));
       if (res.status == 200) {
         setPolls([...res.data.data]);
       }
