@@ -12,13 +12,15 @@ import {
   Card,
   CardContent,
   Slide,
-    Drawer,
+  Drawer,
   IconButton,
   List,
   ListItem,
   ListItemText,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 import { useNavigate } from 'react-router-dom';
@@ -43,26 +45,32 @@ const Home = () => {
   });
 
   const [selectedOptionIndex, setSelectedOptionIndex] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const theme = useTheme();
-const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-const [drawerOpen, setDrawerOpen] = useState(false);
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedOptions, setSelectedOptions] = useState(() => {
     const saved = localStorage.getItem("quick_poll_votes");
     return saved ? JSON.parse(saved) : {};
   });
 
 
-  const handleVote = (pollId, index) => {
-    const updatedVotes = {
-      ...selectedOptions,
-      [pollId]: index,
-    };
+  const handleVote = (pollId, index, isActive) => {
+    console.log(isActive)
 
-    setSelectedOptions(updatedVotes);
-    localStorage.setItem("quick_poll_votes", JSON.stringify(updatedVotes));
-    // emit vote via socket
+    if (isActive) {
 
-    socket.emit('vote', { pollId, optionIndex: index });
+      const updatedVotes = {
+        ...selectedOptions,
+        [pollId]: index,
+      };
+
+      setSelectedOptions(updatedVotes);
+      localStorage.setItem("quick_poll_votes", JSON.stringify(updatedVotes));
+      socket.emit('vote', { pollId, optionIndex: index });
+    } else {
+      setSnackbar({ open: true, message: "Poll Expired you can't vote", severity: 'error' });
+    }
   };
 
 
@@ -71,7 +79,7 @@ const [drawerOpen, setDrawerOpen] = useState(false);
     try {
       const res = await getUser(id);
       setUser(res.data.data); // assumes res.data contains user object
-      fetchAllPolls();
+
     } catch (error) {
       console.log(error);
     }
@@ -93,6 +101,7 @@ const [drawerOpen, setDrawerOpen] = useState(false);
       fetchUser(userId);
 
     }
+    fetchAllPolls();
 
     socket.on('pollUpdated', (updatedPoll) => {
       setPolls((prevPolls) =>
@@ -107,6 +116,10 @@ const [drawerOpen, setDrawerOpen] = useState(false);
     };
 
   }, []);
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
 
   return (
     <>
@@ -242,6 +255,21 @@ const [drawerOpen, setDrawerOpen] = useState(false);
                 <Typography variant="body2" color="text.secondary">
                   Created by: {poll.createdBy?.name}
                 </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Expires at: {new Date(poll.expiresAt).toLocaleString()}
+                </Typography>
+                {
+                  poll.isActive ? (
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Status: Live
+                    </Typography>
+                  )
+                    : (
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Status: Expire
+                      </Typography>
+                    )
+                }
 
                 <Divider sx={{ my: 2 }} />
 
@@ -252,7 +280,7 @@ const [drawerOpen, setDrawerOpen] = useState(false);
                         key={opt._id}
                         fullWidth
                         variant="contained"
-                        onClick={() => handleVote(poll._id, idx)}
+                        onClick={() => handleVote(poll._id, idx, poll.isActive)}
                         sx={{ textTransform: 'none', borderRadius: 2 }}
                       >
                         {opt.text}
@@ -282,6 +310,16 @@ const [drawerOpen, setDrawerOpen] = useState(false);
           })}
 
         </Stack>
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={4000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Container>
 
     </>

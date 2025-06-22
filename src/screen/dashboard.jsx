@@ -61,10 +61,11 @@ const Dashboard = () => {
     if (validateForm()) {
 
       try {
+
         const newPoll = {
 
           createdBy: localStorage.getItem('quick_poll_user_id') || 'anonymous',
-          expiresAt: expireDateTime,
+          expiresAt: new Date(expireDateTime),
           question,
           options: options
             .filter(opt => opt.trim() !== '')
@@ -78,6 +79,7 @@ const Dashboard = () => {
           setOptions(['', '', '', '']);
           setExpireDateTime('');
           setErrors({});
+          getAllPolls();
         } else if (res.status == 400) {
           setSnackbar({ open: true, message: res.data.message, severity: 'success' });
 
@@ -119,7 +121,7 @@ const Dashboard = () => {
   }, [])
 
   useEffect(() => {
-}, [polls]);
+  }, [polls]);
 
   return (
     <>
@@ -192,6 +194,18 @@ const Dashboard = () => {
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   Expires at: {new Date(poll.expiresAt).toLocaleString()}
                 </Typography>
+                {
+                  poll.isActive ? (
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Status: Live
+                    </Typography>
+                  )
+                    : (
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Status: Expire
+                      </Typography>
+                    )
+                }
                 <Divider sx={{ mb: 2 }} />
                 <Stack spacing={1}>
                   {poll.options.map((opt, idx) => (
